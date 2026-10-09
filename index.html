@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welding Metallurgy Lab - Simulator Bab V</title>
+  <!-- Tailwind CSS & Lucide Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js for Thermal Cycle & Graville Diagram -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col custom-scrollbar">
+
+  <!-- NAVBAR HEADER -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-400">
+          <i data-lucide="flame" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-xs font-bold tracking-wider text-amber-500 uppercase bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">Modul Edukasi Teknik</span>
+          <h1 class="text-xl font-extrabold tracking-tight text-white flex items-center gap-2">
+            BAB V: Dasar-Dasar Metalurgi Las
+          </h1>
+        </div>
+      </div>
+
+      <!-- Quick Preset Selector -->
+      <div class="flex items-center gap-3 text-sm">
+        <label class="text-slate-400 font-medium text-xs">Preset Material:</label>
+        <select id="presetSelect" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+          <option value="low-carbon">Baja Karbon Rendah (AISI 1018 - Mild Steel)</option>
+          <option value="medium-carbon">Baja Karbon Sedang (AISI 1045)</option>
+          <option value="high-strength">Baja Paduan Kekuatan Tinggi (HSLA / 4140)</option>
+          <option value="stainless">Baja Tahan Karat Austenitik (SS 304)</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD -->
+  <main class="max-w-7xl mx-auto w-full p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+
+    <!-- LEFT COLUMN: CONTROLS & METALLURGY INPUTS (4 COLS) -->
+    <div class="lg:col-span-4 space-y-6">
+      
+      <!-- Panel 1: Parameter Proses Las -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+          <h2 class="font-bold text-sm tracking-wide text-amber-400 flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4"></i> PARAMETER PROSES LAS
+          </h2>
+          <span id="heatInputBadge" class="text-xs px-2 py-0.5 rounded font-mono font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            HI: 1.20 kJ/mm
+          </span>
+        </div>
+
+        <div class="space-y-4 text-xs">
+          <div>
+            <div class="flex justify-between mb-1 text-slate-300">
+              <span>Kuat Arus (Current / I)</span>
+              <span id="valCurrent" class="font-mono font-bold text-amber-400">160 A</span>
+            </div>
+            <input type="range" id="current" min="60" max="350" step="5" value="160" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1 text-slate-300">
+              <span>Tegangan (Voltage / V)</span>
+              <span id="valVoltage" class="font-mono font-bold text-amber-400">24 V</span>
+            </div>
+            <input type="range" id="voltage" min="12" max="36" step="1" value="24" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1 text-slate-300">
+              <span>Kecepatan Las (Travel Speed / v)</span>
+              <span id="valSpeed" class="font-mono font-bold text-amber-400">3.5 mm/s</span>
+            </div>
+            <input type="range" id="speed" min="1.0" max="10.0" step="0.2" value="3.5" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+
+          <div>
+            <div class="flex justify-between mb-1 text-slate-300">
+              <span>Suhu Pemanasan Awal (Preheat)</span>
+              <span id="valPreheat" class="font-mono font-bold text-amber-400">25 °C</span>
+            </div>
+            <input type="range" id="preheat" min="25" max="350" step="25" value="25" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500">
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Komposisi Kimia & Carbon Equivalent -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+          <h2 class="font-bold text-sm tracking-wide text-cyan-400 flex items-center gap-2">
+            <i data-lucide="atom" class="w-4 h-4"></i> KOMPOSISI LOGAM INDUK
+          </h2>
+          <span class="text-[11px] text-slate-400">Rumus IIW CE</span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <label class="text-slate-400 block mb-1">Karbon (C) %</label>
+            <input type="number" id="chemC" value="0.18" step="0.01" min="0.02" max="1.0" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono text-xs focus:ring-1 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">Mangan (Mn) %</label>
+            <input type="number" id="chemMn" value="0.75" step="0.05" min="0.1" max="2.0" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono text-xs focus:ring-1 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">Kromium (Cr) %</label>
+            <input type="number" id="chemCr" value="0.15" step="0.05" min="0.0" max="18.0" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono text-xs focus:ring-1 focus:ring-cyan-500">
+          </div>
+          <div>
+            <label class="text-slate-400 block mb-1">Molibdenum (Mo) %</label>
+            <input type="number" id="chemMo" value="0.05" step="0.02" min="0.0" max="2.0" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 font-mono text-xs focus:ring-1 focus:ring-cyan-500">
+          </div>
+        </div>
+
+        <!-- CE Output card -->
+        <div class="mt-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+          <div>
+            <div class="text-[11px] text-slate-400 font-medium">Carbon Equivalent (CE)</div>
+            <div id="ceValueDisplay" class="text-xl font-extrabold font-mono text-emerald-400">0.33 %</div>
+          </div>
+          <div id="ceCategoryBadge" class="text-right">
+            <span class="inline-block px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              CE &lt; 0.4 (Sangat Mudah Dilas)
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Prediksi Integritas & Risiko Cacat -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h2 class="font-bold text-sm tracking-wide text-rose-400 flex items-center gap-2 mb-3">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i> PREDIKSI RISIKO METALURGI
+        </h2>
+        <div id="riskList" class="space-y-2 text-xs">
+          <!-- Dynamic Risk Alerts will appear here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: INTERACTIVE VISUALIZATIONS (8 COLS) -->
+    <div class="lg:col-span-8 space-y-6">
+
+      <!-- SECTION 1: 4 ZONA UTAMA LAS & REALTIME CANVAS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-800">
+          <div>
+            <h3 class="font-bold text-base text-white flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Penampang Sambungan Las (Empat Zona Utama)
+            </h3>
+            <p class="text-xs text-slate-400">Arahkan kursor ke penampang las untuk memeriksa karakteristik tiap zona metalurgi.</p>
+          </div>
+          <div class="flex gap-2 text-xs font-mono">
+            <span class="px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">1. FZ</span>
+            <span class="px-2 py-1 rounded bg-orange-500/20 text-orange-300 border border-orange-500/40">2. Weld Interface</span>
+            <span class="px-2 py-1 rounded bg-red-500/20 text-red-300 border border-red-500/40">3. HAZ</span>
+            <span class="px-2 py-1 rounded bg-slate-700/40 text-slate-300 border border-slate-600">4. Base Metal</span>
+          </div>
+        </div>
+
+        <!-- Canvas Visualizer -->
+        <div class="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800 aspect-[16/9] flex items-center justify-center">
+          <canvas id="weldCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+          <div id="zoneTooltip" class="absolute hidden pointer-events-none bg-slate-900/95 border border-slate-700 p-3 rounded-lg shadow-2xl text-xs max-w-xs transition-opacity">
+            <div id="tooltipTitle" class="font-bold text-amber-400 mb-1">Zona</div>
+            <div id="tooltipDesc" class="text-slate-300 leading-relaxed">Deskripsi</div>
+          </div>
+        </div>
+
+        <!-- Status Indikator Geometri Kolam Las -->
+        <div class="grid grid-cols-3 gap-3 mt-4 text-center">
+          <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+            <span class="text-[11px] text-slate-400 block">Lebar Kolam Las (W)</span>
+            <span id="statWeldWidth" class="text-sm font-bold font-mono text-amber-400">8.4 mm</span>
+          </div>
+          <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+            <span class="text-[11px] text-slate-400 block">Penetrasi Kedalaman (P)</span>
+            <span id="statWeldDepth" class="text-sm font-bold font-mono text-cyan-400">3.8 mm</span>
+          </div>
+          <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+            <span class="text-[11px] text-slate-400 block">Karakter Geometri</span>
+            <span id="statGeomShape" class="text-sm font-bold text-emerald-400">Ideal / Seimbang</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTION 2: TABS DUA ANALISIS KRITIS (SIKLUS TERMAL & GRAVILLE / STRUKTUR BUTIR) -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <div class="flex border-b border-slate-800 mb-4 gap-2">
+          <button id="tabBtnThermal" class="px-4 py-2 text-xs font-bold border-b-2 border-amber-500 text-amber-400 transition-all flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4"></i> Siklus Termal Las & Suhu Puncak
+          </button>
+          <button id="tabBtnGraville" class="px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2">
+            <i data-lucide="target" class="w-4 h-4"></i> Diagram Graville (Weldability Map)
+          </button>
+          <button id="tabBtnSolidification" class="px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2">
+            <i data-lucide="grid" class="w-4 h-4"></i> Pembekuan Kristal & Butir
+          </button>
+        </div>
+
+        <!-- TAB 1: SIKLUS TERMAL -->
+        <div id="tabContentThermal" class="space-y-4">
+          <div class="h-64 relative">
+            <canvas id="thermalChart"></canvas>
+          </div>
+          <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs text-slate-300 flex items-start gap-3">
+            <i data-lucide="info" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-semibold text-white">Prinsip Siklus Termal Pengelasan:</p>
+              <p class="text-slate-400 text-[11px] mt-0.5">Suhu naik drastis melampaui titik lebur logam cair (&gt;1500°C) saat busur mendekat, diikuti laju pendinginan (<span class="font-mono text-cyan-300">Cooling Rate</span>). Pemanasan awal (preheat) memperlambat laju pendinginan, mencegah pembentukan struktur martensit yang getas di daerah HAZ.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: DIAGRAM GRAVILLE -->
+        <div id="tabContentGraville" class="hidden space-y-4">
+          <div class="h-64 relative">
+            <canvas id="gravilleChart"></canvas>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-[11px]">
+            <div class="p-2.5 bg-emerald-950/30 border border-emerald-800/40 rounded-lg">
+              <span class="font-bold text-emerald-400 block">Zona 1 (Mudah Dilas)</span>
+              <span class="text-slate-400">Risiko retak sangat rendah, tidak memerlukan pemanasan awal khusus.</span>
+            </div>
+            <div class="p-2.5 bg-amber-950/30 border border-amber-800/40 rounded-lg">
+              <span class="font-bold text-amber-400 block">Zona 2 (Perlu Kontrol)</span>
+              <span class="text-slate-400">Dapat dilas aman dengan kontrol preheat dan low-hydrogen electrode.</span>
+            </div>
+            <div class="p-2.5 bg-rose-950/30 border border-rose-800/40 rounded-lg">
+              <span class="font-bold text-rose-400 block">Zona 3 (Sulit Dilas)</span>
+              <span class="text-slate-400">Rentan retak hidrogen dan kekerasan tinggi; wajib preheat tinggi & PWHT.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PEMBEKUAN DAN STRUKTUR BUTIR -->
+        <div id="tabContentSolidification" class="hidden space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Box Solidifikasi Epitaksial -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
+              <h4 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <i data-lucide="layers" class="w-4 h-4"></i> Pembekuan Epitaksial (Epitaxial)
+              </h4>
+              <p class="text-xs text-slate-300 mb-3 leading-relaxed">
+                Kristal baru tumbuh menempel langsung pada butir logam induk yang tidak mencair dan melanjutkan susunan kisi atom tersebut ke arah kolam las cair.
+              </p>
+              <div class="h-28 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-center p-2 relative overflow-hidden" id="epitaxialGraphic">
+                <!-- SVG Epitaxial Growth Simulation -->
+                <svg class="w-full h-full" viewBox="0 0 200 80">
+                  <rect x="0" y="50" width="200" height="30" fill="#334155" />
+                  <text x="10" y="70" fill="#94a3b8" font-size="9" font-family="monospace">Logam Induk (Padat)</text>
+                  <!-- Base grains -->
+                  <path d="M0,50 L30,50 L25,80 M60,50 L55,80 M110,50 L115,80 M160,50 L155,80" stroke="#64748b" stroke-width="1.5"/>
+                  <!-- Epitaxial continuation lines -->
+                  <path d="M15,50 Q20,20 25,5 M45,50 Q50,22 55,5 M85,50 Q90,20 100,5 M135,50 Q130,20 120,5 M175,50 Q170,22 165,5" stroke="#f59e0b" stroke-width="2" stroke-dasharray="3,2"/>
+                  <text x="70" y="25" fill="#f59e0b" font-size="9" font-family="monospace">Kristal Tumbuh</text>
+                </svg>
+              </div>
+            </div>
+
+            <!-- Box Struktur Kolumnar vs Equiaxed -->
+            <div class="p-4 bg-slate-950 rounded-xl border border-slate-800">
+              <h4 class="text-xs font-bold text-cyan-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <i data-lucide="cpu" class="w-4 h-4"></i> Pengaruh Laju Pendinginan
+              </h4>
+              <div id="grainStructureStatus" class="p-2.5 rounded-lg border mb-3 text-xs bg-slate-900 border-slate-800">
+                <span class="font-bold block" id="grainTypeTitle">Struktur Equiaxed (Membulat Halus)</span>
+                <span class="text-slate-400 text-[11px]" id="grainTypeDesc">Laju pendinginan seimbang menghasilkan butir halus yang ulet dan lebih tahan terhadap retakan.</span>
+              </div>
+              <div class="h-28 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-center" id="grainMicroCanvasContainer">
+                <canvas id="grainCanvas" width="260" height="100"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-3 px-6 text-center text-xs text-slate-500">
+    Simulator Laboratorium Metalurgi Pengelasan © 2026 • Modul Pembelajaran Vokasi & Teknik Mesin
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // DOM ELEMENTS
+    const inCurrent = document.getElementById('current');
+    const inVoltage = document.getElementById('voltage');
+    const inSpeed = document.getElementById('speed');
+    const inPreheat = document.getElementById('preheat');
+    const inC = document.getElementById('chemC');
+    const inMn = document.getElementById('chemMn');
+    const inCr = document.getElementById('chemCr');
+    const inMo = document.getElementById('chemMo');
+
+    const valCurrent = document.getElementById('valCurrent');
+    const valVoltage = document.getElementById('valVoltage');
+    const valSpeed = document.getElementById('valSpeed');
+    const valPreheat = document.getElementById('valPreheat');
+
+    const heatBadge = document.getElementById('heatInputBadge');
+    const ceDisplay = document.getElementById('ceValueDisplay');
+    const ceBadge = document.getElementById('ceCategoryBadge');
+    const riskList = document.getElementById('riskList');
+
+    const statWidth = document.getElementById('statWeldWidth');
+    const statDepth = document.getElementById('statWeldDepth');
+    const statGeom = document.getElementById('statGeomShape');
+
+    const presetSelect = document.getElementById('presetSelect');
+
+    // TABS LOGIC
+    const tabBtnThermal = document.getElementById('tabBtnThermal');
+    const tabBtnGraville = document.getElementById('tabBtnGraville');
+    const tabBtnSolid = document.getElementById('tabBtnSolidification');
+    const contentThermal = document.getElementById('tabContentThermal');
+    const contentGraville = document.getElementById('tabContentGraville');
+    const contentSolid = document.getElementById('tabContentSolidification');
+
+    function setActiveTab(tab) {
+      const tabs = [
+        { btn: tabBtnThermal, content: contentThermal },
+        { btn: tabBtnGraville, content: contentGraville },
+        { btn: tabBtnSolid, content: contentSolid }
+      ];
+      tabs.forEach(t => {
+        if (t.btn === tab) {
+          t.btn.className = "px-4 py-2 text-xs font-bold border-b-2 border-amber-500 text-amber-400 transition-all flex items-center gap-2";
+          t.content.classList.remove('hidden');
+        } else {
+          t.btn.className = "px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all flex items-center gap-2";
+          t.content.classList.add('hidden');
+        }
+      });
+    }
+
+    tabBtnThermal.addEventListener('click', () => setActiveTab(tabBtnThermal));
+    tabBtnGraville.addEventListener('click', () => {
+      setActiveTab(tabBtnGraville);
+      gravilleChart.resize();
+    });
+    tabBtnSolid.addEventListener('click', () => {
+      setActiveTab(tabBtnSolid);
+      drawGrains();
+    });
+
+    // MATERIAL PRESETS
+    const presets = {
+      'low-carbon': { C: 0.16, Mn: 0.65, Cr: 0.05, Mo: 0.02, name: 'Baja Karbon Rendah' },
+      'medium-carbon': { C: 0.45, Mn: 0.80, Cr: 0.15, Mo: 0.05, name: 'Baja Karbon Sedang' },
+      'high-strength': { C: 0.38, Mn: 0.90, Cr: 1.00, Mo: 0.20, name: 'Baja Paduan (4140)' },
+      'stainless': { C: 0.06, Mn: 1.50, Cr: 18.0, Mo: 0.20, name: 'Stainless Steel 304' }
+    };
+
+    presetSelect.addEventListener('change', (e) => {
+      const p = presets[e.target.value];
+      if (p) {
+        inC.value = p.C;
+        inMn.value = p.Mn;
+        inCr.value = p.Cr;
+        inMo.value = p.Mo;
+        updateSim();
+      }
+    });
+
+    // CALCULATION LOGIC
+    function calculateMetallurgy() {
+      const I = parseFloat(inCurrent.value);
+      const V = parseFloat(inVoltage.value);
+      const speed = parseFloat(inSpeed.value); // mm/s
+      const preheat = parseFloat(inPreheat.value); // C
+
+      const C = parseFloat(inC.value) || 0;
+      const Mn = parseFloat(inMn.value) || 0;
+      const Cr = parseFloat(inCr.value) || 0;
+      const Mo = parseFloat(inMo.value) || 0;
+
+      // Heat Input (kJ/mm) assuming arc efficiency 0.8 (SMAW/GMAW)
+      const efficiency = 0.8;
+      const heatInput = (efficiency * (V * I)) / (speed * 1000);
+
+      // Carbon Equivalent IIW: CE = C + Mn/6 + (Cr+Mo)/5
+      const ce = C + (Mn / 6) + ((Cr + Mo) / 5);
+
+      // Pool dimensions derived from Heat Input
+      const weldWidth = Math.max(4.0, (heatInput * 4.2) + 2.5).toFixed(1);
+      const weldDepth = Math.max(2.0, (heatInput * 2.2) + 1.2).toFixed(1);
+
+      // Cooling rate approximation (°C/s) around 800-500°C
+      // Higher heat input & preheat = slower cooling rate
+      const coolingRate = Math.max(5, (120 / (heatInput * 1.5)) - (preheat * 0.15));
+
+      return {
+        I, V, speed, preheat, C, Mn, Cr, Mo,
+        heatInput, ce, weldWidth, weldDepth, coolingRate
+      };
+    }
+
+    // UPDATE UI & GAUGES
+    function updateSim() {
+      const data = calculateMetallurgy();
+
+      valCurrent.textContent = `${data.I} A`;
+      valVoltage.textContent = `${data.V} V`;
+      valSpeed.textContent = `${data.speed} mm/s`;
+      valPreheat.textContent = `${data.preheat} °C`;
+
+      heatBadge.textContent = `HI: ${data.heatInput.toFixed(2)} kJ/mm`;
+      ceDisplay.textContent = `${data.ce.toFixed(2)} %`;
+
+      statWidth.textContent = `${data.weldWidth} mm`;
+      statDepth.textContent = `${data.weldDepth} mm`;
+
+      // Heat Input Category & Shape
+      if (data.heatInput < 0.8) {
+        statGeom.textContent = "Sempit & Dangkal";
+        statGeom.className = "text-sm font-bold text-amber-400";
+      } else if (data.heatInput > 2.0) {
+        statGeom.textContent = "Lebar & Dalam (Panas Tinggi)";
+        statGeom.className = "text-sm font-bold text-rose-400";
+      } else {
+        statGeom.textContent = "Ideal / Seimbang";
+        statGeom.className = "text-sm font-bold text-emerald-400";
+      }
+
+      // Graville classification
+      let gravZone = 1;
+      if (data.ce < 0.40 && data.C < 0.22) {
+        gravZone = 1;
+        ceBadge.innerHTML = `<span class="inline-block px-2.5 py-1 rounded text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Zona 1: Sangat Mudah Dilas</span>`;
+      } else if (data.C > 0.25 && data.ce > 0.48) {
+        gravZone = 3;
+        ceBadge.innerHTML = `<span class="inline-block px-2.5 py-1 rounded text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">Zona 3: Sangat Rentan Retak</span>`;
+      } else {
+        gravZone = 2;
+        ceBadge.innerHTML = `<span class="inline-block px-2.5 py-1 rounded text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Zona 2: Perlu Kontrol Preheat</span>`;
+      }
+
+      // Populate Risk Assessment List
+      updateRisks(data, gravZone);
+
+      // Re-render Canvas & Charts
+      drawWeldCrossSection(data);
+      updateThermalChart(data);
+      updateGravilleMarker(data);
+      drawGrains();
+    }
+
+    function updateRisks(data, gravZone) {
+      riskList.innerHTML = '';
+      const risks = [];
+
+      if (gravZone === 3) {
+        risks.push({
+          type: 'danger',
+          title: 'Risiko Retak Dingin Kritis (Cold Cracking)',
+          desc: 'CE & Karbon tinggi memicu martensit rapuh di HAZ. Wajib preheat >150°C dan elektroda rendah hidrogen.'
+        });
+      }
+
+      if (data.heatInput > 2.2) {
+        risks.push({
+          type: 'warning',
+          title: 'Pembesaran Butir Kasar (Grain Coarsening)',
+          desc: 'Masukan panas terlalu tinggi memperluas daerah HAZ dan menurunkan ketangguhan (impact strength).'
+        });
+        risks.push({
+          type: 'warning',
+          title: 'Potensi Distorsi & Deformasi Tinggi',
+          desc: 'Ekspansi dan kontraksi termal berlebihan akibat akumulasi panas tinggi.'
+        });
+      }
+
+      if (data.heatInput < 0.75) {
+        risks.push({
+          type: 'warning',
+          title: 'Kurang Penetrasi / Kurang Fusi (Lack of Fusion)',
+          desc: 'Masukan panas terlalu rendah menghasilkan kolam las sempit dan penetrasi dangkal.'
+        });
+      }
+
+      if (data.coolingRate > 60 && data.preheat < 100) {
+        risks.push({
+          type: 'danger',
+          title: 'Laju Pendinginan Cepat (Struktur Kolumnar Kasar)',
+          desc: 'Pembekuan terlampau cepat meningkatkan segregasi pengotor di sumbu tengah (rawan retak panas).'
+        });
+      }
+
+      if (risks.length === 0) {
+        risks.push({
+          type: 'safe',
+          title: 'Parameter Operasi Seimbang',
+          desc: 'Masukan panas dan profil metalurgi berada pada rentang ideal untuk kualitas optimal.'
+        });
+      }
+
+      risks.forEach(r => {
+        const borderCol = r.type === 'danger' ? 'border-rose-500/40 bg-rose-950/20 text-rose-300' :
+                         r.type === 'warning' ? 'border-amber-500/40 bg-amber-950/20 text-amber-300' :
+                         'border-emerald-500/40 bg-emerald-950/20 text-emerald-300';
+        const icon = r.type === 'danger' ? 'alert-triangle' : r.type === 'warning' ? 'alert-circle' : 'check-circle-2';
+        
+        const el = document.createElement('div');
+        el.className = `p-2.5 rounded-xl border ${borderCol} flex items-start gap-2`;
+        el.innerHTML = `
+          <i data-lucide="${icon}" class="w-4 h-4 shrink-0 mt-0.5"></i>
+          <div>
+            <div class="font-bold text-white text-xs">${r.title}</div>
+            <div class="text-[11px] opacity-90">${r.desc}</div>
+          </div>
+        `;
+        riskList.appendChild(el);
+      });
+      lucide.createIcons();
+    }
+
+    // 2D CANVAS DRAWING: WELD CROSS-SECTION
+    const canvas = document.getElementById('weldCanvas');
+    const ctx = canvas.getContext('2d');
+    const tooltip = document.getElementById('zoneTooltip');
+    const tooltipTitle = document.getElementById('tooltipTitle');
+    const tooltipDesc = document.getElementById('tooltipDesc');
+
+    let currentZones = [];
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      updateSim();
+    });
+
+    function drawWeldCrossSection(data) {
+      const rect = canvas.getBoundingClientRect();
+      const W = rect.width;
+      const H = rect.height;
+
+      ctx.clearRect(0, 0, W, H);
+
+      const midX = W / 2;
+      const plateTop = H * 0.35;
+      const plateBottom = H * 0.85;
+      const plateHeight = plateBottom - plateTop;
+
+      // Base plates (Zone 4)
+      ctx.fillStyle = '#1e293b';
+      ctx.fillRect(W * 0.08, plateTop, W * 0.84, plateHeight);
+
+      // Plate bevel line indicators
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(W * 0.08, plateTop, W * 0.84, plateHeight);
+
+      // Scaling factors from parameters
+      const weldW = Math.min(W * 0.45, (data.weldWidth * 7.5));
+      const weldD = Math.min(plateHeight * 0.9, (data.weldDepth * 8.5));
+      const hazExpansion = (data.heatInput * 12) + 15;
+
+      // 3. HAZ Area (Heat Affected Zone)
+      ctx.beginPath();
+      ctx.moveTo(midX - weldW/2 - hazExpansion, plateTop);
+      ctx.quadraticCurveTo(midX, plateTop + weldD + hazExpansion, midX + weldW/2 + hazExpansion, plateTop);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.35)'; // Red-ish HAZ
+      ctx.fill();
+
+      // 2. Weld Interface / Mushy Zone (Narrow boundary)
+      ctx.beginPath();
+      ctx.moveTo(midX - weldW/2 - 4, plateTop);
+      ctx.quadraticCurveTo(midX, plateTop + weldD + 4, midX + weldW/2 + 4, plateTop);
+      ctx.closePath();
+      ctx.strokeStyle = '#f97316';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // 1. Fusion Zone (FZ) Cap + Penetration
+      ctx.beginPath();
+      // Reinforcement (Cap)
+      ctx.moveTo(midX - weldW/2, plateTop);
+      ctx.quadraticCurveTo(midX, plateTop - 18, midX + weldW/2, plateTop);
+      // Penetration Bead
+      ctx.quadraticCurveTo(midX, plateTop + weldD, midX - weldW/2, plateTop);
+      ctx.closePath();
+      
+      const grad = ctx.createLinearGradient(midX, plateTop - 20, midX, plateTop + weldD);
+      grad.addColorStop(0, '#f59e0b');
+      grad.addColorStop(0.5, '#ea580c');
+      grad.addColorStop(1, '#9a3412');
+      ctx.fillStyle = grad;
+      ctx.fill();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Dendrite/Columnar Growth lines inside FZ
+      ctx.strokeStyle = 'rgba(254, 240, 138, 0.4)';
+      ctx.lineWidth = 1.2;
+      const numRays = 8;
+      for (let i = 1; i <= numRays; i++) {
+        const t = i / (numRays + 1);
+        const startX = (midX - weldW/2) + t * weldW;
+        ctx.beginPath();
+        ctx.moveTo(startX, plateTop);
+        ctx.quadraticCurveTo(midX, plateTop + weldD * 0.6, midX, plateTop + weldD * 0.85);
+        ctx.stroke();
+      }
+
+      // Save zones for mouse inspection
+      currentZones = [
+        {
+          id: 1,
+          name: "1. Zona Fusi (Fusion Zone / FZ)",
+          desc: "Area tengah tempat logam induk dan elektroda mencair sempurna dan membeku. Mengalami pengadukan elektromagnetik & gaya apung.",
+          check: (x, y) => Math.hypot(x - midX, y - (plateTop + weldD * 0.4)) < weldW * 0.35 && y > plateTop - 20 && y < plateTop + weldD
+        },
+        {
+          id: 2,
+          name: "2. Weld Interface / Mushy Zone",
+          desc: "Batas sangat sempit transisi cair-padat. Logam hanya mencair sebagian dan belum sepenuhnya berfusi dengan kolam cair.",
+          check: (x, y) => Math.hypot(x - midX, y - (plateTop + weldD * 0.5)) < (weldW * 0.35 + 8) && y > plateTop
+        },
+        {
+          id: 3,
+          name: "3. Daerah Terpengaruh Panas (HAZ)",
+          desc: "Logam tidak mencair namun terpanggang suhu tinggi (>727°C). Terjadi pembesaran butir kristal dan fase martensit rapuh.",
+          check: (x, y) => Math.hypot(x - midX, y - (plateTop + weldD * 0.5)) < (weldW * 0.5 + hazExpansion) && y >= plateTop && y <= plateBottom
+        },
+        {
+          id: 4,
+          name: "4. Logam Induk Tak Terpengaruh (Base Metal)",
+          desc: "Area logam yang struktur mikronya tidak berubah oleh panas, tetapi menanggung tegangan sisa (residual stress) akibat penyusutan lasan.",
+          check: (x, y) => x > W * 0.08 && x < W * 0.92 && y >= plateTop && y <= plateBottom
+        }
+      ];
+    }
+
+    // CANVAS MOUSE INTERACTION (TOOLTIP)
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      let matched = null;
+      for (const z of currentZones) {
+        if (z.check(x, y)) {
+          matched = z;
+          break;
+        }
+      }
+
+      if (matched) {
+        tooltip.style.left = `${Math.min(rect.width - 200, x + 15)}px`;
+        tooltip.style.top = `${Math.max(10, y - 50)}px`;
+        tooltipTitle.textContent = matched.name;
+        tooltipDesc.textContent = matched.desc;
+        tooltip.classList.remove('hidden');
+      } else {
+        tooltip.classList.add('hidden');
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      tooltip.classList.add('hidden');
+    });
+
+    // THERMAL CYCLE CHART (Chart.js)
+    let thermalChart;
+    function initThermalChart() {
+      const ctxThermal = document.getElementById('thermalChart').getContext('2d');
+      thermalChart = new Chart(ctxThermal, {
+        type: 'line',
+        data: {
+          labels: [0, 2, 4, 6, 8, 10, 15, 20, 30, 45, 60],
+          datasets: [
+            {
+              label: 'Zona Fusi (Puncak Fusi)',
+              data: [25, 600, 1580, 1200, 850, 650, 400, 250, 150, 70, 35],
+              borderColor: '#f59e0b',
+              backgroundColor: 'rgba(245, 158, 11, 0.1)',
+              tension: 0.35,
+              fill: true
+            },
+            {
+              label: 'Daerah HAZ',
+              data: [25, 300, 1050, 800, 600, 480, 320, 210, 130, 60, 30],
+              borderColor: '#ef4444',
+              borderDash: [5, 4],
+              tension: 0.35
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              title: { display: true, text: 'Suhu (°C)', color: '#94a3b8' },
+              grid: { color: 'rgba(51, 65, 85, 0.4)' },
+              ticks: { color: '#94a3b8' }
+            },
+            x: {
+              title: { display: true, text: 'Waktu (detik)', color: '#94a3b8' },
+              grid: { color: 'rgba(51, 65, 85, 0.2)' },
+              ticks: { color: '#94a3b8' }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+          }
+        }
+      });
+    }
+
+    function updateThermalChart(data) {
+      if (!thermalChart) return;
+      const peakFZ = Math.min(1850, 1450 + (data.heatInput * 150));
+      const peakHAZ = Math.min(1300, 850 + (data.heatInput * 120));
+      const preheat = data.preheat;
+
+      // Recalculate dynamic cooling curves based on cooling rate & preheat
+      const fzPoints = [
+        preheat,
+        preheat + (peakFZ - preheat) * 0.45,
+        peakFZ,
+        peakFZ * 0.72 + preheat * 0.2,
+        peakFZ * 0.48 + preheat * 0.3,
+        peakFZ * 0.32 + preheat * 0.4,
+        peakFZ * 0.20 + preheat * 0.5,
+        peakFZ * 0.12 + preheat * 0.6,
+        preheat + 80,
+        preheat + 30,
+        preheat
+      ];
+
+      const hazPoints = [
+        preheat,
+        preheat + (peakHAZ - preheat) * 0.4,
+        peakHAZ,
+        peakHAZ * 0.68 + preheat * 0.2,
+        peakHAZ * 0.45 + preheat * 0.3,
+        peakHAZ * 0.30 + preheat * 0.4,
+        peakHAZ * 0.18 + preheat * 0.5,
+        preheat + 90,
+        preheat + 40,
+        preheat + 15,
+        preheat
+      ];
+
+      thermalChart.data.datasets[0].data = fzPoints;
+      thermalChart.data.datasets[1].data = hazPoints;
+      thermalChart.update('none');
+    }
+
+    // GRAVILLE DIAGRAM CHART (Chart.js Scatter)
+    let gravilleChart;
+    function initGravilleChart() {
+      const ctxGraville = document.getElementById('gravilleChart').getContext('2d');
+      gravilleChart = new Chart(ctxGraville, {
+        type: 'scatter',
+        data: {
+          datasets: [
+            {
+              label: 'Titik Posisi Material Saat Ini',
+              data: [{ x: 0.35, y: 0.18 }],
+              backgroundColor: '#38bdf8',
+              borderColor: '#ffffff',
+              borderWidth: 2,
+              pointRadius: 8
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              min: 0.1,
+              max: 0.9,
+              title: { display: true, text: 'Carbon Equivalent / CE (%)', color: '#94a3b8' },
+              grid: { color: 'rgba(51, 65, 85, 0.4)' },
+              ticks: { color: '#94a3b8' }
+            },
+            y: {
+              min: 0.0,
+              max: 0.6,
+              title: { display: true, text: 'Kadar Karbon / C (%)', color: '#94a3b8' },
+              grid: { color: 'rgba(51, 65, 85, 0.4)' },
+              ticks: { color: '#94a3b8' }
+            }
+          },
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `CE: ${ctx.parsed.x.toFixed(2)}%, C: ${ctx.parsed.y.toFixed(2)}%`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateGravilleMarker(data) {
+      if (!gravilleChart) return;
+      gravilleChart.data.datasets[0].data = [{ x: data.ce, y: data.C }];
+      gravilleChart.update('none');
+    }
+
+    // GRAIN STRUCTURE DRAWING (Equiaxed vs Columnar)
+    function drawGrains() {
+      const gCanvas = document.getElementById('grainCanvas');
+      if (!gCanvas) return;
+      const gCtx = gCanvas.getContext('2d');
+      const w = gCanvas.width;
+      const h = gCanvas.height;
+      const data = calculateMetallurgy();
+
+      gCtx.clearRect(0, 0, w, h);
+
+      const titleEl = document.getElementById('grainTypeTitle');
+      const descEl = document.getElementById('grainTypeDesc');
+
+      if (data.coolingRate > 45) {
+        // Columnar Grains (Fast cooling / High risk)
+        titleEl.textContent = "Struktur Kolumnar (Memanjang & Kasar)";
+        titleEl.className = "font-bold block text-rose-400";
+        descEl.textContent = "Pendinginan cepat memaksa kristal tumbuh memanjang ke arah pusat lasan. Mudah terjadi pemisahan pengotor dan retak panas.";
+
+        gCtx.strokeStyle = '#f43f5e';
+        gCtx.fillStyle = '#4c0519';
+        gCtx.lineWidth = 1.5;
+
+        for (let i = 10; i < w - 10; i += 18) {
+          gCtx.beginPath();
+          gCtx.moveTo(i, 5);
+          gCtx.lineTo(i + 4, h/2 - 2);
+          gCtx.lineTo(i, h - 5);
+          gCtx.lineTo(i + 14, h - 5);
+          gCtx.lineTo(i + 10, h/2 - 2);
+          gCtx.lineTo(i + 14, 5);
+          gCtx.closePath();
+          gCtx.fill();
+          gCtx.stroke();
+        }
+      } else {
+        // Equiaxed Grains (Slow cooling / Tough)
+        titleEl.textContent = "Struktur Equiaxed (Membulat & Halus)";
+        titleEl.className = "font-bold block text-emerald-400";
+        descEl.textContent = "Laju pendinginan lebih terkontrol menghasilkan butir kristal membulat teratur, ulet, dan tahan terhadap retakan.";
+
+        gCtx.strokeStyle = '#10b981';
+        gCtx.fillStyle = '#064e3b';
+        gCtx.lineWidth = 1.2;
+
+        for (let x = 15; x < w - 10; x += 22) {
+          for (let y = 15; y < h - 10; y += 22) {
+            gCtx.beginPath();
+            gCtx.arc(x + (Math.sin(y) * 3), y + (Math.cos(x) * 3), 9, 0, Math.PI * 2);
+            gCtx.fill();
+            gCtx.stroke();
+          }
+        }
+      }
+    }
+
+    // BIND SLIDERS EVENT
+    [inCurrent, inVoltage, inSpeed, inPreheat, inC, inMn, inCr, inMo].forEach(el => {
+      el.addEventListener('input', updateSim);
+    });
+
+    // INITIALIZATION
+    window.addEventListener('load', () => {
+      resizeCanvas();
+      initThermalChart();
+      initGravilleChart();
+      updateSim();
+    });
+  </script>
+</body>
+</html>
